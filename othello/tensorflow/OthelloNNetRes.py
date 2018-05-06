@@ -4,7 +4,7 @@ from utils import *
 
 import tensorflow as tf
 
-class GobangNNet():
+class OthelloNNet():
     def __init__(self, game, args):
         # game params
         self.board_x, self.board_y = game.getBoardSize()
@@ -20,7 +20,7 @@ class GobangNNet():
 
         # Neural Net
         self.graph = tf.Graph()
-        with self.graph.as_default():
+        with self.graph.as_default(): 
             self.input_boards = tf.placeholder(tf.float32, shape=[None, self.board_x, self.board_y])    # s: batch_size x board_x x board_y
             self.dropout = tf.placeholder(tf.float32)
             self.isTraining = tf.placeholder(tf.bool, name="is_training")
@@ -41,16 +41,16 @@ class GobangNNet():
             for i in range(2,5):
                 fltrs= filters*2
                 
-                inputs= self.res_block(inputs, filters, 2)
+                inputs= self.res_block(inputs, filters, 1)
                 inputs= self.res_block(inputs, 64, 1)
                 
-            inputs = inputs= tf.layes.batch_normalization(inputs)
+            inputs = inputs= tf.layers.batch_normalization(inputs)
             inputs = tf.nn.relu(inputs)     
 
             # fully connected layers
             h_conv4_flat= tf.contrib.layers.flatten(inputs)
             
-
+            
             s_fc1 = Dropout(Relu(BatchNormalization(Dense(h_conv4_flat, 1024), axis=1, training=self.isTraining)), rate=self.dropout) # batch_size x 1024
             s_fc2 = Dropout(Relu(BatchNormalization(Dense(s_fc1, 512), axis=1, training=self.isTraining)), rate=self.dropout)         # batch_size x 512
             self.pi = Dense(s_fc2, self.action_size)                                                        # batch_size x self.action_size
@@ -62,13 +62,11 @@ class GobangNNet():
     def conv2d(self, x, out_channels, padding):
       return tf.layers.conv2d(x, out_channels, kernel_size=[3,3], padding=padding)
 
-    
-
     def res_block(self, inputs, filters, strides):
 
         #convolutional layer 2
         shortcut= inputs
-        inputs= tf.layes.batch_normalization(inputs)
+        inputs= tf.layers.batch_normalization(inputs)
         inputs= tf.nn.relu(inputs)
         
         
@@ -76,7 +74,7 @@ class GobangNNet():
                                 filters=filters, strides= strides,
                                 kernel_size=[3,3],
                                padding="same")
-        inputs= tf.layes.batch_normalization(inputs)
+        inputs= tf.layers.batch_normalization(inputs)
         inputs = tf.nn.relu(inputs)
 
         inputs= tf.layers.conv2d(inputs= inputs,
@@ -88,15 +86,12 @@ class GobangNNet():
         concat1= tf.concat([shortcut,inputs],-1)
 
         return concat1
-
-
-
-
+    
 
     def calculate_loss(self):
         self.target_pis = tf.placeholder(tf.float32, shape=[None, self.action_size])
         self.target_vs = tf.placeholder(tf.float32, shape=[None])
-        self.loss_pi =  tf.losses.softmax_cross_entropy_with_logits(self.target_pis, self.pi)
+        self.loss_pi =  tf.losses.softmax_cross_entropy(self.target_pis, self.pi)
         self.loss_v = tf.losses.mean_squared_error(self.target_vs, tf.reshape(self.v, shape=[-1,]))
         self.total_loss = self.loss_pi + self.loss_v
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
