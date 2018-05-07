@@ -82,10 +82,9 @@ class OthelloNNet():
                                 kernel_size=[3,3], strides= 1,
                                padding="same")
 
-        #concatenation   
-        concat1= tf.concat([shortcut,inputs],-1)
+        
 
-        return concat1
+        return shortcut+ inputs
     
 
     def calculate_loss(self):
